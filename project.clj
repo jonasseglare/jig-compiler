@@ -8,4 +8,5 @@
                  [hickory "0.7.1"]
                  [com.cemerick/url "0.1.1"]
                  [cheshire "5.9.0"]]
+  :main jig-compiler.core
   :repl-options {:init-ns jig-compiler.core})

@@ -80,8 +80,7 @@
                        :process/init-crop-margin 0.02
                        :process/required-scale-change 0.7
                        :process/max-rel-height 1.3
-                       :process/output-directory "output"
-                       :process/output-filename "output.pdf"
+                       :process/output-prefix "output"
                        :process/paper-width-meters 0.21
                        :render/frame? false
                        :render/scale 0.92
@@ -380,7 +379,7 @@
          groups []
          rel-height 0]
     (if (empty? tunes)
-      groups
+      (conj groups group)
       (let [[tune & tunes] tunes
             rh (tune-weight tune)
             new-height (+ rel-height rh)]
@@ -404,7 +403,7 @@
     (reduce into [] [packed-single packed-multi])))
 
 (defn group-filename [index settings]
-  (io/file (:process/output-directory settings)
+  (io/file (:process/output-prefix settings)
            (format "page_%02d.pdf" index)))
 
 (defn build-group-page [index group settings]
@@ -444,12 +443,15 @@
   (println "Done"))
 
 (defn concatenate-group-pages [groups settings]
-  (apply shell/sh (flatten ["pdftk"
-                            (for [i (range (count groups))]
-                              (.getAbsolutePath (group-filename i settings)))
-                            "cat"
-                            "output"
-                            (:process/output-filename settings)])))
+  (let [catted-filename (str (:process/output-prefix settings) ".pdf")
+        numbered-filename (str (:process/output-prefix settings) "_numbered.pdf")]
+    (apply shell/sh (flatten ["pdftk"
+                              (for [i (range (count groups))]
+                                (.getAbsolutePath (group-filename i settings)))
+                              "cat"
+                              "output"
+                              catted-filename]))
+    (shell/sh "pdfjam" "--outfile" numbered-filename "--pagecommand" "'{}'" catted-filename)))
 
 (defn find-tune-by-index [index tunes]
   (first (filter #(= index (:index %)) tunes)))
@@ -509,8 +511,31 @@
            (preprocess tune settings)))))
      (println "Done!")))
 
+(defn full-process []
+  (let [settings default-settings]
+    (let [log-msg (fn [x] (println "------------------------------" x))
+          _ (log-msg "Get page")
+          page-data (get-page-data settings)
+          _ (log-msg "Parse page")
+          tunes (parse-page-data page-data)
+          _ (log-msg "Download tunes")
+          _ (download-tunes tunes settings)
+          _ (log-msg "Preprocess tunes")          
+          _ (preprocess-tunes tunes settings)
+          _ (log-msg "Optimize page layout")          
+          groups (group-pages tunes settings)
+          _ (log-msg "Build pages")                    
+          _ (build-groups groups settings)
+          _ (log-msg "Concatenate pages")                    
+          _ (concatenate-group-pages groups settings)]
+      (println "---------------- DONE"))))
+
+(defn -main [& args]
+  (full-process))
 
 (comment
+
+  
   ;;;;(def problematic-tune (find-tune-by-index 20162 tunes))   
   (def page-data (get-page-data default-settings))
   (def tunes (parse-page-data page-data))
