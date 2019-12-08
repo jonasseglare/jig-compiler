@@ -1,44 +1,17 @@
 # jig-compiler
 
-A Clojure library designed to ... well, that part is up to you.
+A tool that downloads all the Canadian tunes from the [Vitrifolk repository](https://vitrifolk.fr/partitions/partitions-canada.html) and concatenates them into a single PDF while minimizing the number of pages using a binpacking heuristic.
 
 ## Usage
 
-FIXME
+`lein run`
 
-## Convert commands
-Get the size of an image:
-```
-convert downloads/tune020172_v00.png -format "%w %h" info:
-```
-
-Count pages:
-https://stackoverflow.com/questions/7462633/count-pages-in-pdf-file-using-imagemagick-php
-```
-pdfinfo $file | grep Pages: | awk '{print $2}'
-```
-
-Image stacking:
-```
-https://superuser.com/questions/316132/appending-images-vertically-in-imagemagick
-```
-
-PDF crop:
-```
-sudo apt-get install texlive-extra-utils
-```
-https://askubuntu.com/questions/124692/command-line-tool-to-crop-pdf-files
-```
-```
-
-PDF-jam
-https://www.linuxquestions.org/questions/linux-newbie-8/merge-pdf-files-vertically-and-horizontally-874882/
-
-
-PDF unite
-http://manpages.ubuntu.com/manpages/bionic/man1/pdfunite.1.html
-
-
+## Requirements
+The following tools
+  * `pdfcrop`
+  * `convert`
+  * `pdfinfo`
+  * `pdfjam`
 
 ## License
 
