@@ -79,11 +79,12 @@
                        :scraper/dst-directory "downloads"
                        :process/init-crop-margin 0.02
                        :process/required-scale-change 0.7
-                       :process/max-rel-height 1.3
+                       :process/max-rel-height 1.4
                        :process/output-prefix "output"
                        :process/paper-width-meters 0.21
                        :render/frame? false
                        :render/scale 0.92
+                       :process/bin-pack? true
                        })
 
 (defn relative-height [[w h]]
@@ -379,7 +380,10 @@
          groups []
          rel-height 0]
     (if (empty? tunes)
-      (conj groups group)
+      (let [result (conj groups group)]
+        (assert (= (count prep-tunes)
+                   (apply + (map count result))))
+        result)
       (let [[tune & tunes] tunes
             rh (tune-weight tune)
             new-height (+ rel-height rh)]
@@ -391,14 +395,16 @@
 
 (defn group-pages [tunes settings]
   (let [tunes (load-preprocessed-data tunes settings)
-        mv-inds (multiversion-inds tunes)
-        single-version-tunes (filter (comp (complement mv-inds) :index) tunes)
-        multi-version-tunes (filter (comp mv-inds :index) tunes)
+        mv-inds (if (:process/bin-pack? settings)
+                  (multiversion-inds tunes)
+                  (set (map :index tunes)))
+        packed-tunes (filter (comp (complement mv-inds) :index) tunes)
+        ordered-tunes (filter (comp mv-inds :index) tunes)
         packed-single (bp/pack-bins (:process/max-rel-height settings)
                                     tune-weight
-                                    single-version-tunes)
-        packed-multi (group-pages-naive multi-version-tunes settings)]
-    (println "single-version-tunes" (count single-version-tunes))
+                                    packed-tunes)
+        packed-multi (group-pages-naive ordered-tunes settings)]
+    (println "packed-tunes" (count packed-tunes))
     (println "packed-single" (count packed-single))
     (reduce into [] [packed-single packed-multi])))
 
